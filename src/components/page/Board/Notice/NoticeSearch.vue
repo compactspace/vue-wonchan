@@ -25,9 +25,8 @@ const handlerSearch = () => {
   //1. url 파라미터 쿼리
   const query = [];
   !keyword.value || query.push(`searchTitle=${keyword.value}`);
-  !searchStartDate.value ||
-    query.push(`searchStartDate=${searchStartDate.value}`);
-  !searchEndDate.value || query.push(`searchEndDate=${searchEndDate.value}`);
+  !searchStartDate.value || query.push(`searchStDate=${searchStartDate.value}`);
+  !searchEndDate.value || query.push(`searchEdDate=${searchEndDate.value}`);
   const queryString = query.length > 0 ? `?${query.join('&')}` : '';
   console.log(queryString);
 
