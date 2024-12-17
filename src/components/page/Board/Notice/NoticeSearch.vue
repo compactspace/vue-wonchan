@@ -8,13 +8,14 @@
     <input type="date" v-model="searchStartDate" />
     <input type="date" v-model="searchEndDate" />
     <button @click="handlerSearch">검색</button>
-    <button>신규등록</button>
+    <button @click="handlerModal">신규등록</button>
   </div>
 </template>
 <script setup>
+import axios from 'axios';
 import { watchEffect } from 'vue';
 import router from '../../../../router';
-
+import { useModalStore } from '../../../../stores/modalState';
 //값변경 저장 + 및 +리랜더린 유발
 const keyword = ref('');
 const searchStartDate = ref('');
@@ -32,6 +33,11 @@ const handlerSearch = () => {
 
   //라우터 파일로 가보면 무슨 함수인줄 안다.
   router.push(queryString);
+};
+const modalState = useModalStore();
+const handlerModal = () => {
+  modalState.setModalState();
+  // console.log(modalState.modalState);
 };
 
 //인자로 받은 함수안에 반응형 객체 (ref) 같은게 있으면

@@ -1,5 +1,12 @@
 <template>
   <div class="divNoticeList">
+    <!-- 그냥 속성을 보내는 거다 -->
+    <NoticeModal
+      v-if="modalState.modalState"
+      @postSuccess="searchList"
+      @modalClose="() => (noticeIdx = 0)"
+      :idx="noticeIdx"
+    />
     <!--  if(noticeList !=undifined) 랑 같은 의미 이다.-->
     현재 페이지: 0 총 개수: {{ noticeList?.noticeCnt }}
     <table>
@@ -21,11 +28,15 @@
       <tbody>
         <!-- template 공 태그로 그냥 형식적인 태그이다.  -->
         <template v-if="noticeList">
-          <template v-if="noticeList.noticeCnt > 0">
+          <template v-if="noticeList?.noticeCnt > 0">
             <!-- 랜더링시 포문 전체 재랜더링 방지로 key 속성을 이용한다. 고유한 이름을 만들어서, 고유한 것만 참조하여 랜더링한다. 
             백단에서 받은 pk로 추천
             -->
-            <tr v-for="notice in noticeList.notice" :key="notice.noticeIdx">
+            <tr
+              v-for="notice in noticeList.notice"
+              :key="notice.noticeIdx"
+              @click="handlerModal(notice.noticeIdx)"
+            >
               <td>{{ notice.noticeIdx }}</td>
               <td>{{ notice.title }}</td>
               <td>{{ notice.createdDate.substr(0, 10) }}</td>
@@ -59,10 +70,15 @@
 import axios from 'axios';
 import { useRoute } from 'vue-router';
 import Pagination from '../../../common/Pagination.vue';
+import { onMounted, onUnmounted } from 'vue';
+import { useModalStore } from '../../../../stores/modalState';
 const route = useRoute();
 
 const noticeList = ref();
 const cPage = ref(1);
+const modalState = useModalStore();
+
+const noticeIdx = ref(0);
 
 const searchList = () => {
   const param = new URLSearchParams({
@@ -78,9 +94,19 @@ const searchList = () => {
     noticeList.value = res.data;
   });
 };
+
+const handlerModal = (idx) => {
+  console.log(idx);
+  noticeIdx.value = idx;
+
+  modalState.setModalState();
+  // console.log(modalState.modalState);
+};
+
 watch(route, searchList);
 onMounted(() => {
   searchList();
+  //alert('돔객체가 그려진후 마운트  ' + JSON.stringify(noticeList.value));
 });
 </script>
 

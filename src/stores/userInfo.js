@@ -10,6 +10,7 @@ export const useUserInfo = defineStore(
   'userInfo',
   () => {
     const user = ref();
+
     async function setUserData(loginInfo) {
       const param = new URLSearchParams(loginInfo);
       const result = await axios.post('/api/loginProc.do', param);

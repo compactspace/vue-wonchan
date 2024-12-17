@@ -1,27 +1,218 @@
 <template>
+  <!-- teleport 바디로 보내주세요 의미로 to 속성을 가짐 -->
   <teleport to="body">
     <div class="backdrop">
       <div class="container">
-        <label> 제목 :<input type="text" /> </label>
+        <label>
+          제목 :<input type="text" v-model="noticeDetail.title" />
+        </label>
         <label>
           내용 :
-          <input type="text" />
+          <input type="text" v-model="noticeDetail.content" />
         </label>
-        파일 :<input type="file" style="display: none" id="fileInput" />
+        파일 :<input
+          type="file"
+          style="display: none"
+          id="fileInput"
+          @change="handlerFile"
+        />
         <label class="img-label" htmlFor="fileInput"> 파일 첨부하기 </label>
-        <div>
-          <label>파일명</label>
+        <div @click="fileDownload">
+          <div v-if="imageUrl">
+            <label>파일 미리보기</label>
+            <img :src="imageUrl" />
+          </div>
+          <div v-else>
+            <label>파일명</label>
+          </div>
         </div>
         <div class="button-box">
-          <button>삭제</button>
-          <button>나가기</button>
+          <button @click="props.idx ? handlerUpdateBtn() : handlerSaveBtn()">
+            {{ props.idx ? '수정' : '저장' }}
+          </button>
+
+          <button v-if="props.idx" @click="handlerDelteBtn">삭제</button>
+          <button @click="handlerModal">나가기</button>
         </div>
       </div>
     </div>
   </teleport>
 </template>
 
-<script setup></script>
+<script setup>
+import axios from 'axios';
+import { useModalStore } from '../../../../stores/modalState';
+import { useUserInfo } from '../../../../stores/userInfo';
+import { onMounted, onUnmounted } from 'vue';
+const modalState = useModalStore();
+
+const emit = defineEmits(['postSuccess', 'modalClose']);
+
+const noticeDetail = ref({});
+
+const userInfo = useUserInfo();
+
+const props = defineProps(['idx']);
+
+const imageUrl = ref('');
+
+const fileData = ref('');
+
+const handlerSaveBtn = () => {
+  const textData = {
+    ...noticeDetail.value,
+    loginId: userInfo.user.loginId,
+    context: noticeDetail.value.content,
+  };
+
+  const formData = new FormData();
+  if (fileData.value) formData.append('file', fileData.value);
+  formData.append(
+    'text',
+    new Blob([JSON.stringify(textData)], {
+      type: 'application/json',
+    })
+  );
+
+  console.log(formData);
+
+  //500 error 백단 서버 쪽을 봐야함 거의 높은 확률로 파람 널포인트나, 뭐 파라미터가 불일치 할듯
+  axios.post('/api/board/noticeFileSaveForm.do', formData).then((res) => {
+    if (res.data.result === 'success') {
+      modalState.setModalState();
+      emit('postSuccess');
+    }
+  });
+};
+
+const handlerModal = () => {
+  modalState.setModalState();
+  // console.log(modalState.modalState);
+};
+
+const searchDetail = () => {
+  axios
+    .post('/api/board/noticeDetailBody.do', { noticeSeq: props.idx })
+    .then((res) => {
+      noticeDetail.value = res.data.detail;
+      if (
+        noticeDetail.value.fileExt === 'jpg' ||
+        noticeDetail.value.fileExt == 'gif' ||
+        noticeDetail.value.fileExt === 'png' ||
+        fileExtension.value.fileExt === 'webp'
+      ) {
+        getFileImage();
+      }
+    });
+};
+
+const handlerUpdateBtn = () => {
+  const textData = {
+    title: noticeDetail.value.title,
+    content: noticeDetail.value.content,
+    noticeSeq: props.idx,
+  };
+
+  const formData = new FormData();
+  if (fileData.value) formData.append('file', fileData.value);
+  formData.append(
+    'text',
+    new Blob([JSON.stringify(textData)], {
+      type: 'application/json',
+    })
+  );
+
+  axios.post('/api/board/noticeUpdateFileForm.do', formData).then((res) => {
+    if (res.data.result === 'success') {
+      modalState.setModalState();
+      emit('postSuccess');
+    }
+  });
+};
+
+const handlerDelteBtn = () => {
+  const textData = {
+    noticeSeq: props.idx,
+  };
+  axios.post('/api/board/noticeDeleteBody.do', textData).then((res) => {
+    if (res.data.result === 'success') {
+      modalState.setModalState();
+      emit('postSuccess');
+    }
+  });
+};
+
+const handlerFile = (e) => {
+  const fileInfo = e.target.files;
+
+  // ['KakaoTalk_20230814_145351981_01', 'png'] 꼴로 분할됨.
+  const fileInfoSplit = fileInfo[0].name.split('.');
+  // console.log(fileInfoSplit);
+  const fileExtension = fileInfoSplit[1].toLowerCase();
+  if (
+    fileExtension === 'jpg' ||
+    fileExtension == 'gif' ||
+    fileExtension === 'png' ||
+    fileExtension === 'webp'
+  ) {
+    imageUrl.value = URL.createObjectURL(fileInfo[0]);
+    console.log(imageUrl.value);
+  }
+
+  fileData.value = fileInfo[0];
+};
+
+const getFileImage = async () => {
+  let param = new URLSearchParams();
+  param.append('noticeSeq', props.idx);
+  const postAction = {
+    url: '/api/board/noticeDownload.do',
+    method: 'POST',
+    data: param,
+    responseType: 'blob',
+  };
+
+  await axios(postAction).then((res) => {
+    //console.log(res.data);
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    imageUrl.value = url;
+  });
+};
+
+const fileDownload = () => {
+  let param = new URLSearchParams();
+  param.append('noticeSeq', props.idx);
+  const postAction = {
+    url: '/api/board/noticeDownload.do',
+    method: 'POST',
+    data: param,
+    responseType: 'blob',
+  };
+
+  axios(postAction).then((res) => {
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', noticeDetail.value.fileName);
+    document.body.appendChild(link);
+    link.click();
+    //추가된 링크가 계속 추가되니 삭제하자.
+    link.remove();
+  });
+};
+
+onMounted(() => {
+  console.log(props.idx);
+  // 0 이 조건식에 쓰이면 펠스인듯
+  props.idx && searchDetail();
+});
+
+onUnmounted(() => {
+  console.log('모달나가기 할시 뜸');
+  emit('modalClose');
+});
+</script>
 
 <style lang="scss" scoped>
 .backdrop {

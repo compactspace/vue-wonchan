@@ -5,7 +5,7 @@
     </li>
     <li class="content">
       <!-- keep-alive: 열때 로딩 시간 잡아줌 중요하진 않다 당장응 -->
-      <!-- router-view: 가 중요
+      <!-- router-view: 가 중요: 또한 index.js 에서 children 속성 명으로 들어와있어야함 보면암
              url 변경에 따른 원하는 부분만 변경하는 기능이다.   
             -->
       <keep-alive><router-view></router-view></keep-alive>
