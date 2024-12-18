@@ -34,6 +34,12 @@ const routes = [
             name: 'noticeDetail',
             component: NoticeDetail,
           },
+
+          {
+            path: 'notice.do/insert',
+            name: 'noticeInsert',
+            component: NoticeDetail,
+          },
         ],
       },
     ],

@@ -75,6 +75,7 @@ import Pagination from '../../../common/Pagination.vue';
 import { onMounted, onUnmounted, watchEffect } from 'vue';
 import { useModalStore } from '../../../../stores/modalState';
 import { useQuery } from '@tanstack/vue-query';
+import { useNoticeListSearchQuery } from '../../../../hook/notice/useNoticeListSearchQuery.js';
 const route = useRoute();
 const router = useRouter();
 // const noticeList = ref();
@@ -85,23 +86,23 @@ const noticeIdx = ref(0);
 
 const injectedValue = inject('providedValue');
 
-watch(injectedValue, () => {
-  console.log(injectedValue.value);
-});
+// watch(injectedValue, () => {
+//   console.log(injectedValue.value);
+// });
 
-const searchList = async () => {
-  const param = new URLSearchParams({
-    ...injectedValue.value,
-    currentPage: cPage.value,
-    pageSize: 5,
-  });
+// const searchList = async () => {
+//   const param = new URLSearchParams({
+//     ...injectedValue.value,
+//     currentPage: cPage.value,
+//     pageSize: 5,
+//   });
 
-  // vite.config.js  api는 프록시 세팅을 보아라..
+//   // vite.config.js  api는 프록시 세팅을 보아라..
 
-  const result = await axios.post('/api/board/noticeListJson.do', param);
+//   const result = await axios.post('/api/board/noticeListJson.do', param);
 
-  return result.data;
-};
+//   return result.data;
+// };
 
 const {
   data: noticeList,
@@ -109,16 +110,7 @@ const {
   isLoading,
   refetch,
   isSuccess,
-  isError,
-} = useQuery({
-  //유즈쿼리의 이름 설정
-  queryKey: ['noticeList', injectedValue, cPage],
-  queryFn: searchList,
-  //신선도의 확인으로 신선도가 지나면 리패치 같은말로 그전 까지는 캐싱이 되어있어서, 서버를 타지 않는다.
-  staleTime: 1000 * 60,
-  //이건 그냥 시간만 보고, 초 단위로 리패치 시켜줌.
-  // refetchInterval: 1000,
-});
+} = useNoticeListSearchQuery(injectedValue, cPage);
 
 //사실 필요없다..! refetch가 있다 정도 확인을 위해 사용 위 쿼리키에 추가해도 기능은 동일하다.
 //watch([injectedValue, cPage], refetch);
