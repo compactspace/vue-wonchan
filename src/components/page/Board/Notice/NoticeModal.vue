@@ -99,7 +99,7 @@ const searchDetail = () => {
         noticeDetail.value.fileExt === 'jpg' ||
         noticeDetail.value.fileExt == 'gif' ||
         noticeDetail.value.fileExt === 'png' ||
-        fileExtension.value.fileExt === 'webp'
+        noticeDetail.value.fileExt === 'webp'
       ) {
         getFileImage();
       }
@@ -173,7 +173,16 @@ const getFileImage = async () => {
   };
 
   await axios(postAction).then((res) => {
-    //console.log(res.data);
+    console.log(res.data);
+    // // Blob에서 데이터를 읽어들이기
+    // const reader = new FileReader();
+
+    // reader.onload = () => {
+    //   // 읽어들이기가 끝나면 결과를 출력
+    //   console.log(reader.result);
+    // };
+    // reader.readAsText(res.data);
+
     const url = window.URL.createObjectURL(new Blob([res.data]));
     imageUrl.value = url;
   });
