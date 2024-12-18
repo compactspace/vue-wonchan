@@ -27,8 +27,7 @@
       </thead>
       <tbody>
         <!-- template 공 태그로 그냥 형식적인 태그이다.  -->
-        <template v-if="isLoading">....로딩중</template>
-        <template v-if="isSuccess">
+        <template v-if="noticeList">
           <template v-if="noticeList?.noticeCnt > 0">
             <!-- 랜더링시 포문 전체 재랜더링 방지로 key 속성을 이용한다. 고유한 이름을 만들어서, 고유한 것만 참조하여 랜더링한다. 
             백단에서 받은 pk로 추천
@@ -36,7 +35,7 @@
             <tr
               v-for="notice in noticeList.notice"
               :key="notice.noticeIdx"
-              @click="handlerDetail(notice.noticeIdx)"
+              @click="handlerModal(notice.noticeIdx)"
             >
               <td>{{ notice.noticeIdx }}</td>
               <td>{{ notice.title }}</td>
@@ -50,7 +49,6 @@
             </tr>
           </template>
         </template>
-        <template v-if="isError">에러발생!!!!!!</template>
       </tbody>
     </table>
     <!--
@@ -70,68 +68,46 @@
 
 <script setup>
 import axios from 'axios';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import Pagination from '../../../common/Pagination.vue';
-import { onMounted, onUnmounted, watchEffect } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
 import { useModalStore } from '../../../../stores/modalState';
-import { useQuery } from '@tanstack/vue-query';
 const route = useRoute();
-const router = useRouter();
-// const noticeList = ref();
+
+const noticeList = ref();
 const cPage = ref(1);
 const modalState = useModalStore();
 
 const noticeIdx = ref(0);
 
-const injectedValue = inject('providedValue');
-
-watch(injectedValue, () => {
-  console.log(injectedValue.value);
-});
-
-const searchList = async () => {
+const searchList = () => {
   const param = new URLSearchParams({
-    ...injectedValue.value,
+    searchTitle: route.query.searchTitle || '',
+    searchStDate: route.query.searchStDate || '',
+    searchEdDate: route.query.searchEdDate || '',
     currentPage: cPage.value,
     pageSize: 5,
   });
 
   // vite.config.js  api는 프록시 세팅을 보아라..
-
-  const result = await axios.post('/api/board/noticeListJson.do', param);
-
-  return result.data;
-};
-
-const {
-  data: noticeList,
-  //팬딘: 대기중 확인
-  isLoading,
-  refetch,
-  isSuccess,
-  isError,
-} = useQuery({
-  //유즈쿼리의 이름 설정
-  queryKey: ['noticeList', injectedValue, cPage],
-  queryFn: searchList,
-  //신선도의 확인으로 신선도가 지나면 리패치 같은말로 그전 까지는 캐싱이 되어있어서, 서버를 타지 않는다.
-  staleTime: 1000 * 60,
-  //이건 그냥 시간만 보고, 초 단위로 리패치 시켜줌.
-  // refetchInterval: 1000,
-});
-
-//사실 필요없다..! refetch가 있다 정도 확인을 위해 사용 위 쿼리키에 추가해도 기능은 동일하다.
-//watch([injectedValue, cPage], refetch);
-
-const handlerDetail = (param) => {
-  console.log(param);
-  //url는 스트링 타입으로!! push 해야함
-  router.push({
-    //이는 등록한 이름으로 찾아가.ㅁ
-    name: 'noticeDetail',
-    params: { idx: param },
+  axios.post('/api/board/noticeListJson.do', param).then((res) => {
+    noticeList.value = res.data;
   });
 };
+
+const handlerModal = (idx) => {
+  console.log(idx);
+  noticeIdx.value = idx;
+
+  modalState.setModalState();
+  // console.log(modalState.modalState);
+};
+
+watch(route, searchList);
+onMounted(() => {
+  searchList();
+  //alert('돔객체가 그려진후 마운트  ' + JSON.stringify(noticeList.value));
+});
 </script>
 
 <style lang="scss" scoped>
